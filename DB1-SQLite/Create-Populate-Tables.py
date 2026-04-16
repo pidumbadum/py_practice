@@ -80,7 +80,7 @@ employees_data = [
     (4, 'Козлов', "Алексей", 2),
     (5, 'Васильева', 'Ольга', 4)
 ]
-cursor.executemany("INSERT OR IGNORE INTO `employees` (`id`,`surname`,`name`, `id_job_title`) VALUES (?, ?, ?, ?)",employees_data)
+cursor.executemany("INSERT OR IGNORE INTO `employees` (`id_employees`,`surname`,`name`, `id_job_title`) VALUES (?, ?, ?, ?)",employees_data)
 
 orders_data = []
 clients_data = []
