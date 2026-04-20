@@ -2,6 +2,9 @@ import sqlite3
 import random
 from datetime import date, timedelta
 
+def get_spaces(string, max = 21):
+    return (max - len(str(string)) - 1) * ' ' + '|' 
+
 def get_random_date(start_date, end_date):
     # Разница между датами
     delta = end_date - start_date
@@ -14,7 +17,7 @@ def generate_number():
     mobile_number = random.choice('123456789') + ''.join(random.choices('0123456789', k=9))
     return(f'+{mobile_number}')
 
-organization =["Google", "Роскосмос", "Всемирная организация здравоохранения", "Tesla", "МГУ имени М. В. Ломоносова"]
+organization =["Google", "Роскосмос", "ВОЗ", "Tesla", "МГУ М.В. Ломоносова"]
 #Подключение
 connection = sqlite3.connect('base.db')
 cursor = connection.cursor()
@@ -98,3 +101,38 @@ cursor.executemany("INSERT OR IGNORE INTO `clients` (`id_clients`, `organization
 
 # Сохранение изменений
 connection.commit()
+
+cursor.execute ("""
+SELECT e.surname, e.name, j.name as job_title FROM employees e
+JOIN job_titles j ON e.id_job_title = j.id_job_title""")
+
+employees_with_job_titles = cursor.fetchall()
+print ("Сотрудники и их должности:")
+for employee in employees_with_job_titles:
+    print(f"{employee[0]} {employee[1]} - {employee[2]}")
+
+cursor.execute("""
+    SELECT o.id_order, 
+           cl.organization, 
+           e.surname || ' ' || e.name AS employee_fio, 
+           o.sum, 
+           o.due_date, 
+           o.progress_mark 
+    FROM orders o
+    JOIN clients cl ON o.id_client = cl.id_clients
+    JOIN employees e ON o.id_employ = e.id_employees
+""")
+
+orders_with_details = cursor.fetchall()
+print("\nЗаказы:")
+print(f"Код заказа{get_spaces('Код заказа')} Клиент{get_spaces('Клиент')} Сотрудник{get_spaces('Сотрудник')} Сумма{get_spaces('Сумма')} Срок{get_spaces('Срок')} Статус{get_spaces('Статус')}")
+
+for order in orders_with_details:
+    status = " Выполнен" if order[5] else " В работе"
+    
+    print(f"{order[0]}{get_spaces(order[0])} "
+          f"{order[1]}{get_spaces(order[1])} "
+          f"{order[2]}{get_spaces(order[2])} "
+          f"{order[3]}{get_spaces(order[3])} "
+          f"{order[4]}{get_spaces(order[4])} "
+          f"{status}{get_spaces(status)}")
