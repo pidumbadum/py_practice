@@ -123,16 +123,63 @@ cursor.execute("""
     JOIN employees e ON o.id_employ = e.id_employees
 """)
 
-orders_with_details = cursor.fetchall()
-print("\nЗаказы:")
-print(f"Код заказа{get_spaces('Код заказа')} Клиент{get_spaces('Клиент')} Сотрудник{get_spaces('Сотрудник')} Сумма{get_spaces('Сумма')} Срок{get_spaces('Срок')} Статус{get_spaces('Статус')}")
+# orders_with_details = cursor.fetchall()
+# print("\nЗаказы:")
+# print(f"Код заказа{get_spaces('Код заказа')} Клиент{get_spaces('Клиент')} Сотрудник{get_spaces('Сотрудник')} Сумма{get_spaces('Сумма')} Срок{get_spaces('Срок')} Статус{get_spaces('Статус')}")
 
-for order in orders_with_details:
-    status = " Выполнен" if order[5] else " В работе"
+# for order in orders_with_details:
+#     status = " Выполнен" if order[5] else " В работе"
     
-    print(f"{order[0]}{get_spaces(order[0])} "
-          f"{order[1]}{get_spaces(order[1])} "
-          f"{order[2]}{get_spaces(order[2])} "
-          f"{order[3]}{get_spaces(order[3])} "
-          f"{order[4]}{get_spaces(order[4])} "
-          f"{status}{get_spaces(status)}")
+#     print(f"{order[0]}{get_spaces(order[0])} "
+#           f"{order[1]}{get_spaces(order[1])} "
+#           f"{order[2]}{get_spaces(order[2])} "
+#           f"{order[3]}{get_spaces(order[3])} "
+#           f"{order[4]}{get_spaces(order[4])} "
+#           f"{status}{get_spaces(status)}")
+    
+#А теперь запросики
+
+# Всего заказов в базе
+cursor.execute("SELECT COUNT(*) FROM `orders`")
+total_orders = cursor.fetchone()[0]
+print(f"\nВсего заказов: {total_orders}")
+
+# Сколько заказов у каждого сотрудника
+cursor.execute("""
+    SELECT e.surname, e.name, COUNT(o.id_order) as order_count
+    FROM employees e
+    LEFT JOIN `orders` o ON e.id_employees = o.id_employ
+    GROUP BY e.id_employees
+    ORDER BY order_count DESC
+""")
+for row in cursor.fetchall():
+    print(f"{row[0]} {row[1]} — {row[2]} заказов")
+
+#выручка
+cursor.execute("SELECT SUM(`sum`) FROM `orders`")
+total_revenue=cursor.fetchone()[0] or 0
+print(f'\nОбщая выручка: {total_revenue}')
+#Самый дорогой клиент
+cursor.execute("""
+    SELECT c.organization, SUM(o.sum) as client_revenue
+    FROM clients c
+    JOIN `orders` o ON c.id_clients = o.id_client
+    GROUP BY c.id_clients
+    ORDER BY client_revenue DESC
+""")
+favorite_clien =[0, 0]
+for row in cursor.fetchall():
+    if row[1] > favorite_clien[1]:
+        favorite_clien = row
+    print(f'{row[0]} заказали на {row[1]} руб.')
+print(f'\nСамый прибыльный клиент: {favorite_clien[0]}')
+
+# Самый дорогой и самый дешёвый заказ
+cursor.execute("SELECT MAX(`sum`), MIN(`sum`) FROM `orders`")
+max_s, min_s = cursor.fetchone()
+print(f"\nМакс. заказ: {max_s} руб. | Мин. заказ: {min_s} руб.")
+
+# Дата самого раннего и позднего заказа
+cursor.execute("SELECT MIN(due_date), MAX(due_date) FROM `orders`")
+min_date, max_date = cursor.fetchone()
+print(f"Заказы с {min_date} по {max_date}")
