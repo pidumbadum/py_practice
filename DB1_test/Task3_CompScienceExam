@@ -1,0 +1,80 @@
+import pandas as pd
+import sqlite3
+from pathlib import Path
+
+base = "./3.xlsx"
+db_file = 'database.db'
+
+#connect
+conn = sqlite3.connect(db_file)
+cursor = conn.cursor()
+
+xls = pd.read_excel(base, sheet_name=None, engine='openpyxl') #Читает эксельку
+df_movement = xls['Движение_товаров']
+#lamda x.strftime('%d.%m.%Y') преобрахует по маске строку из TimeStamp в норм строку
+#чтобы скюлайт не возмущался
+df_movement['Дата'] = df_movement['Дата'].apply(lambda x: x.strftime('%d.%m.%Y'))
+
+#Лист магазин
+df_shop = xls['Магазин']
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS Магазин (
+        id_магазина TEXT PRIMARY KEY,
+        район TEXT,
+        адрес TEXT
+    )
+''')
+#iterrows() Перебирает строки 
+for _, row in df_shop.iterrows():
+    cursor.execute(
+        'INSERT OR REPLACE INTO Магазин VALUES (?, ?, ?)',
+        (row['ID магазина'], row['Район'], row['Адрес'])
+    )
+
+df_product = xls['Товар']
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS Товар (
+        артикул INTEGER PRIMARY KEY,
+        отдел TEXT,
+        наименование TEXT,
+        ед_изм TEXT,
+        кол_во_в_упаковке REAL,
+        поставщик TEXT
+    )
+''')
+for _, row in df_product.iterrows():
+    cursor.execute(
+        'INSERT OR REPLACE INTO Товар VALUES (?, ?, ?, ?, ?, ?)',
+        (row['Артикул'], row['Отдел'], row['Наименование товара'],
+         row['Ед. изм'], row['Количество в упаковке'], row['Поставщик'])
+    )
+
+df_movement = xls['Движение_товаров']
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS Движение_товаров (
+        id_операции INTEGER PRIMARY KEY,
+        дата TEXT,
+        id_магазина TEXT,
+        артикул INTEGER,
+        кол_во_упаковок INTEGER,
+        тип_операции TEXT,
+        цена_руб_шт REAL,
+        FOREIGN KEY (id_магазина) REFERENCES Магазин(id_магазина),
+        FOREIGN KEY (артикул) REFERENCES Товар(артикул)
+    )
+''')
+for _, row in df_movement.iterrows():
+    
+    cursor.execute(
+        'INSERT OR REPLACE INTO Движение_товаров VALUES (?, ?, ?, ?, ?, ?, ?)',
+        (row['ID операции'], row['Дата'], row['ID магазина'],
+         row['Артикул'], row['Количество упаковок, шт.'],
+         row['Тип операции'], row['Цена руб./шт.'])
+    )
+conn.commit()
+
+cursor.execute("""SELECT * from Товар""")
+strings = cursor.fetchall()
+
+for row in strings:
+    print(row)
