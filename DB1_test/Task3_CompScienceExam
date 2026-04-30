@@ -75,6 +75,14 @@ for _, row in df_movement.iterrows():
          row['Артикул'], row['Количество упаковок, шт.'],
          row['Тип операции'], row['Цена руб./шт.'])
     )
+
+#оказалось мы раюотаем только с датами г.м.д
+cursor.execute('''
+    UPDATE Движение_товаров 
+    SET дата = SUBSTR(дата, 7, 4) || '-' || SUBSTR(дата, 4, 2) || '-' || SUBSTR(дата, 1, 2)
+''')
+#строка разбивает дату д.м.г на части функцией SUBSTR, 
+# меняет их порядок на год-месяц-день и склеивает через дефисы оператором ||
 conn.commit()
 
 cursor.execute("SELECT артикул, наименование FROM Товар")
@@ -97,3 +105,23 @@ ids = [row[0] for row in shops]
 for row in shops:
     print(f'{row[0]}{get_spaces(row[0], 7)}{row[1]}{get_spaces(row[1])}{row[2]}')
 
+# cursor.execute("SELECT * FROM Движение_товаров LIMIT 5")
+# for col in cursor.description:
+#     print(col[0])
+
+# for col in cursor.fetchall():
+#     print(col)
+
+cursor.execute("""SELECT 
+               SUM(CASE WHEN тип_операции = 'Поступление' THEN кол_во_упаковок ELSE 0 END) AS сумма_поступлений,
+                SUM(CASE WHEN тип_операции = 'Продажа' THEN кол_во_упаковок ELSE 0 END) AS сумма_продаж
+               FROM `Движение_товаров`
+               WHERE id_магазина IN (SELECT id_магазина FROM Магазин WHERE район = 'Заречный')
+               AND артикул = 15
+               AND дата BETWEEN '2021-06-01' AND '2021-06-10'""")
+
+result = cursor.fetchall()
+# print(result)
+print('\nПоступило упаковок   Продано упаковок')
+print(f'{result[0][0]}{get_spaces(result[0][0], len("Поступило упаковок    "))}{result[0][1]}')
+print(f'В наличии:{result[0][0] - result[0][1]} упаковок')
