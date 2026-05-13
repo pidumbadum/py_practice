@@ -72,9 +72,9 @@ SELECT
     student_name,
     average_score,
     CASE
-        WHEN average_score >= 4.5 THEN 'Отличник'
-        WHEN average_score >= 4.0 THEN 'Хорошист'
-        WHEN average_score >= 3.0 THEN 'Троечник'
+        WHEN average_score >= 90 THEN 'Отличник'
+        WHEN average_score >= 75 THEN 'Хорошист'
+        WHEN average_score >= 63 THEN 'Троечник'
         ELSE 'Неудовлетворительно'
     END AS успеваемость
 FROM students
